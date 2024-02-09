@@ -35,7 +35,7 @@ func main() {
 	var config Config
 	err = json.Unmarshal(file, &config)
 	if err != nil {
-		fmt.Printf("Couldn't parse config file.: %v\n", err)
+		fmt.Printf("Couldn't parse config file: %v\n", err)
 		return
 	}
 
