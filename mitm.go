@@ -7,20 +7,17 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+	"strings"
 )
 
-var nodes_limit int
-
 func main() {
-
-	var err error
 
 	if len(os.Args) < 3 {
 		fmt.Printf("Usage: %s [nodes] [path] [...additional args]", os.Args[0])
 		return
 	}
 
-	nodes_limit, err = strconv.Atoi(os.Args[1])
+	nodes_limit, err := strconv.Atoi(os.Args[1])
 	if err != nil {
 		fmt.Printf("Invalid nodes arg: %v", err)
 		return
@@ -39,7 +36,7 @@ func main() {
 
 	go mitm(o_pipe, os.Stdout)
 	go mitm(e_pipe, os.Stderr)
-	adjuster_mitm(os.Stdin, i_pipe)
+	adjuster_mitm(os.Stdin, i_pipe, nodes_limit)
 }
 
 func mitm(input io.Reader, output io.Writer) {
@@ -50,10 +47,15 @@ func mitm(input io.Reader, output io.Writer) {
 	}
 }
 
-func adjuster_mitm(input io.Reader, output io.Writer) {
+func adjuster_mitm(input io.Reader, output io.Writer, nodes_limit int) {
 	scanner := bufio.NewScanner(input)
 	for scanner.Scan() {
-		output.Write(scanner.Bytes())
-		output.Write([]byte{'\n'})
+		s := scanner.Text()
+		if strings.HasPrefix(s, "go ") {
+			output.Write([]byte(fmt.Sprintf("go nodes %d\n", nodes_limit)))
+		} else {
+			output.Write([]byte(s))
+			output.Write([]byte{'\n'})
+		}
 	}
 }
