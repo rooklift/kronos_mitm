@@ -2,41 +2,57 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
-	"strconv"
+	"path/filepath"
 	"strings"
 )
 
+type Config struct {
+	Nodes int
+	Path string
+	Args []string
+}
+
 func main() {
 
-	if len(os.Args) < 3 {
-		fmt.Printf("Usage: %s [nodes] [path] [...additional args]", os.Args[0])
-		return
-	}
-
-	nodes_limit, err := strconv.Atoi(os.Args[1])
+	mypath, err := os.Executable()
 	if err != nil {
-		fmt.Printf("Invalid nodes arg: %v", err)
+		fmt.Printf("Couldn't find myself\n")
 		return
 	}
 
-	exec_command := exec.Command(os.Args[2], os.Args[3:]...)
+	file, err := ioutil.ReadFile(filepath.Join(filepath.Dir(mypath), "mitm.json"))
+	if err != nil {
+		fmt.Printf("Failed to load config file: %v\n", err)
+		return
+	}
+
+	var config Config
+	err = json.Unmarshal(file, &config)
+	if err != nil {
+		fmt.Printf("Couldn't parse config file.: %v\n", err)
+		return
+	}
+
+	exec_command := exec.Command(config.Path, config.Args...)
 	i_pipe, _ := exec_command.StdinPipe()
 	o_pipe, _ := exec_command.StdoutPipe()
 	e_pipe, _ := exec_command.StderrPipe()
 
 	err = exec_command.Start()
 	if err != nil {
-		fmt.Printf("Failed to start engine: %v", err)
+		fmt.Printf("Failed to start engine: %v\n", err)
 		return
 	}
 
 	go mitm(o_pipe, os.Stdout)
 	go mitm(e_pipe, os.Stderr)
-	adjuster_mitm(os.Stdin, i_pipe, nodes_limit)
+	adjuster_mitm(os.Stdin, i_pipe, config.Nodes)
 }
 
 func mitm(input io.Reader, output io.Writer) {
@@ -51,7 +67,7 @@ func adjuster_mitm(input io.Reader, output io.Writer, nodes_limit int) {
 	scanner := bufio.NewScanner(input)
 	for scanner.Scan() {
 		s := scanner.Text()
-		if strings.HasPrefix(s, "go ") {
+		if strings.HasPrefix(s, "go") {
 			output.Write([]byte(fmt.Sprintf("go nodes %d\n", nodes_limit)))
 		} else {
 			output.Write([]byte(s))
