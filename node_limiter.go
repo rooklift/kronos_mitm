@@ -26,7 +26,7 @@ func main() {
 		return
 	}
 
-	file, err := ioutil.ReadFile(filepath.Join(filepath.Dir(mypath), "mitm.json"))
+	file, err := ioutil.ReadFile(filepath.Join(filepath.Dir(mypath), "config.json"))
 	if err != nil {
 		fmt.Printf("Failed to load config file: %v\n", err)
 		return

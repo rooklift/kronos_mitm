@@ -1,0 +1,5 @@
+{
+	"Path": "C://Programs (self-installed)/Chess Engines/stockfish-windows-x86-64-avx2.exe",
+	"Nodes": 200,
+	"Args": []
+}
